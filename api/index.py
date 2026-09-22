@@ -174,3 +174,126 @@ def handler(request):
         'headers': headers,
         'body': json.dumps({'status': 'error', 'message': 'Not found'})
     }
+
+# Vercel expects a top-level variable named 'app', 'application', or 'handler'
+app = handler
+    
+    # Get the path
+    path = request.get('path', '/')
+    
+    # Handle OPTIONS request
+    if request.get('method') == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({'status': 'ok'})
+        }
+    
+    # Handle GET request
+    if request.get('method') == 'GET':
+        if path == '/test':
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps({'status': 'test working'})
+            }
+        elif path == '/lead':
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps({'status': 'lead endpoint working', 'message': 'Use POST for form submissions'})
+            }
+        elif path == '/xray':
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps({'status': 'xray endpoint working', 'message': 'Use POST for form submissions'})
+            }
+    
+    # Handle POST request
+    if request.get('method') == 'POST':
+        try:
+            body = json.loads(request.get('body', '{}'))
+            
+            if path == '/lead':
+                logger.info(f"Получена заявка: {body}")
+                
+                message = f"""
+📝 <b>НОВАЯ ЗАЯВКА С САЙТА</b>
+
+👤 <b>Имя:</b> {body.get('name', 'Не указано')}
+🏢 <b>Компания:</b> {body.get('company', 'Не указано')}
+📊 <b>Оборот:</b> {body.get('turnover', 'Не указано')}
+👥 <b>Размер команды:</b> {body.get('team', 'Не указано')}
+📈 <b>Выручка:</b> {body.get('revenue', 'Не указано')}
+💬 <b>Контакт:</b> {body.get('contact', 'Не указано')} ({body.get('contact_type', 'Не указано')})
+🌐 <b>Сайт:</b> {body.get('site', 'Не указано')}
+
+📝 <b>Что происходит:</b>
+{body.get('what', 'Не указано')}
+
+🎯 <b>Ситуация:</b> {body.get('problem', 'Не выбрана')}
+
+⏰ <b>Время:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                """.strip()
+                
+                success = send_telegram_message(message)
+                
+                if success:
+                    return {
+                        'statusCode': 200,
+                        'headers': headers,
+                        'body': json.dumps({'status': 'success', 'message': 'Заявка отправлена'})
+                    }
+                else:
+                    return {
+                        'statusCode': 500,
+                        'headers': headers,
+                        'body': json.dumps({'status': 'error', 'message': 'Ошибка при отправке - бот не добавлен в чат'})
+                    }
+            
+            elif path == '/xray':
+                logger.info(f"Получен X-Ray результат: {body}")
+                
+                message = f"""
+🔍 <b>РЕЗУЛЬТАТ BUSINESS X-RAY</b>
+
+👤 <b>Имя:</b> {body.get('name', 'Не указано')}
+🏢 <b>Компания:</b> {body.get('company', 'Не указано')}
+
+📊 <b>Результаты опроса:</b>
+{body.get('results', 'Нет результатов')}
+
+⏰ <b>Время:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                """.strip()
+                
+                success = send_telegram_message(message)
+                
+                if success:
+                    return {
+                        'statusCode': 200,
+                        'headers': headers,
+                        'body': json.dumps({'status': 'success', 'message': 'Результаты отправлены'})
+                    }
+                else:
+                    return {
+                        'statusCode': 500,
+                        'headers': headers,
+                        'body': json.dumps({'status': 'error', 'message': 'Ошибка при отправке - бот не добавлен в чат'})
+                    }
+                    
+        except Exception as e:
+            logger.error(f"Ошибка при обработке запроса: {e}")
+            return {
+                'statusCode': 500,
+                'headers': headers,
+                'body': json.dumps({'status': 'error', 'message': str(e)})
+            }
+    
+    return {
+        'statusCode': 404,
+        'headers': headers,
+        'body': json.dumps({'status': 'error', 'message': 'Not found'})
+    }
+# Vercel expects a top-level variable named 'app', 'application', or 'handler'
+app = handler
