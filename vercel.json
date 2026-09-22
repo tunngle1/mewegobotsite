@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "webhook.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/webhook/lead",
+      "methods": ["POST", "OPTIONS"],
+      "dest": "/webhook/lead"
+    },
+    {
+      "src": "/webhook/xray",
+      "methods": ["POST", "OPTIONS"],
+      "dest": "/webhook/xray"
+    },
+    {
+      "src": "/health",
+      "methods": ["GET"],
+      "dest": "/health"
+    }
+  ],
+  "env": {
+    "BOT_TOKEN": "@bot_token"
+  }
+}
