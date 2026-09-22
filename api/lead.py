@@ -7,7 +7,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": ["https://mewegrowth.vercel.app", "http://localhost:*"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Accept"]
+    }
+})
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_CHAT_FILE = '../admin_chat_id.json'
