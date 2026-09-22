@@ -3,17 +3,6 @@ import json
 import logging
 import requests
 from datetime import datetime
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app, resources={
-    r"/*": {
-        "origins": ["https://mewegrowth.vercel.app", "http://localhost:*"],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Accept"]
-    }
-})
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_CHAT_FILE = '../admin_chat_id.json'
@@ -58,45 +47,85 @@ def send_telegram_message(text: str, chat_id: str = None) -> bool:
         logger.error(f"Ошибка при отправке в Telegram: {e}")
         return False
 
-@app.route('/', methods=['GET', 'POST', 'OPTIONS'])
-def handle_lead():
-    """Обработка заявки с формы сайта"""
-    if request.method == 'GET':
-        return jsonify({"status": "lead endpoint working", "message": "Use POST for form submissions"}), 200
+def handler(request):
+    """Vercel serverless function handler"""
+    # CORS headers
+    headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type,Accept',
+        'Access-Control-Allow-Methods': 'POST,OPTIONS,GET',
+        'Content-Type': 'application/json'
+    }
     
+    # Handle OPTIONS request
     if request.method == 'OPTIONS':
-        return jsonify({"status": "ok"}), 200
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({'status': 'ok'})
+        }
     
-    try:
-        logger.info(f"Получена заявка: {request.json}")
-        data = request.json
-        
-        message = f"""
+    # Handle GET request (for testing)
+    if request.method == 'GET':
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({
+                'status': 'lead endpoint working',
+                'message': 'Use POST for form submissions'
+            })
+        }
+    
+    # Handle POST request
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body)
+            logger.info(f"Получена заявка: {body}")
+            
+            message = f"""
 📝 <b>НОВАЯ ЗАЯВКА С САЙТА</b>
 
-👤 <b>Имя:</b> {data.get('name', 'Не указано')}
-🏢 <b>Компания:</b> {data.get('company', 'Не указано')}
-📊 <b>Оборот:</b> {data.get('turnover', 'Не указано')}
-👥 <b>Размер команды:</b> {data.get('team', 'Не указано')}
-📈 <b>Выручка:</b> {data.get('revenue', 'Не указано')}
-💬 <b>Контакт:</b> {data.get('contact', 'Не указано')} ({data.get('contact_type', 'Не указано')})
-🌐 <b>Сайт:</b> {data.get('site', 'Не указано')}
+👤 <b>Имя:</b> {body.get('name', 'Не указано')}
+🏢 <b>Компания:</b> {body.get('company', 'Не указано')}
+📊 <b>Оборот:</b> {body.get('turnover', 'Не указано')}
+👥 <b>Размер команды:</b> {body.get('team', 'Не указано')}
+📈 <b>Выручка:</b> {body.get('revenue', 'Не указано')}
+💬 <b>Контакт:</b> {body.get('contact', 'Не указано')} ({body.get('contact_type', 'Не указано')})
+🌐 <b>Сайт:</b> {body.get('site', 'Не указано')}
 
 📝 <b>Что происходит:</b>
-{data.get('what', 'Не указано')}
+{body.get('what', 'Не указано')}
 
-🎯 <b>Ситуация:</b> {data.get('problem', 'Не выбрана')}
+🎯 <b>Ситуация:</b> {body.get('problem', 'Не выбрана')}
 
 ⏰ <b>Время:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-        """.strip()
-        
-        success = send_telegram_message(message)
-        
-        if success:
-            return jsonify({"status": "success", "message": "Заявка отправлена"})
-        else:
-            return jsonify({"status": "error", "message": "Ошибка при отправке - бот не добавлен в чат"}), 500
+            """.strip()
             
-    except Exception as e:
-        logger.error(f"Ошибка при обработке заявки: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+            success = send_telegram_message(message)
+            
+            if success:
+                return {
+                    'statusCode': 200,
+                    'headers': headers,
+                    'body': json.dumps({'status': 'success', 'message': 'Заявка отправлена'})
+                }
+            else:
+                return {
+                    'statusCode': 500,
+                    'headers': headers,
+                    'body': json.dumps({'status': 'error', 'message': 'Ошибка при отправке - бот не добавлен в чат'})
+                }
+                
+        except Exception as e:
+            logger.error(f"Ошибка при обработке заявки: {e}")
+            return {
+                'statusCode': 500,
+                'headers': headers,
+                'body': json.dumps({'status': 'error', 'message': str(e)})
+            }
+    
+    return {
+        'statusCode': 405,
+        'headers': headers,
+        'body': json.dumps({'status': 'error', 'message': 'Method not allowed'})
+    }
