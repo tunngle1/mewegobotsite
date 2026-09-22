@@ -62,7 +62,11 @@ def send_telegram_message(text: str, chat_id: str = None) -> bool:
 def handle_lead():
     """Обработка заявки с формы сайта"""
     if request.method == 'OPTIONS':
-        return jsonify({"status": "ok"}), 200
+        response = jsonify({"status": "ok"})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response, 200
     
     try:
         logger.info(f"Получена заявка: {request.json}")
