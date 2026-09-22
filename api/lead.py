@@ -58,15 +58,14 @@ def send_telegram_message(text: str, chat_id: str = None) -> bool:
         logger.error(f"Ошибка при отправке в Telegram: {e}")
         return False
 
-@app.route('/', methods=['POST', 'OPTIONS'])
+@app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 def handle_lead():
     """Обработка заявки с формы сайта"""
+    if request.method == 'GET':
+        return jsonify({"status": "lead endpoint working", "message": "Use POST for form submissions"}), 200
+    
     if request.method == 'OPTIONS':
-        response = jsonify({"status": "ok"})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept')
-        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
-        return response, 200
+        return jsonify({"status": "ok"}), 200
     
     try:
         logger.info(f"Получена заявка: {request.json}")
