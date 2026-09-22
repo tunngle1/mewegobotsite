@@ -59,6 +59,7 @@ def handle_lead():
         return jsonify({"status": "ok"}), 200
     
     try:
+        logger.info(f"Получена заявка: {request.json}")
         data = request.json
         
         message = f"""
@@ -122,3 +123,8 @@ def handle_xray():
     except Exception as e:
         logger.error(f"Ошибка при обработке X-Ray: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/health', methods=['GET'])
+def health():
+    """Проверка здоровья сервиса"""
+    return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
