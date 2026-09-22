@@ -25,8 +25,5 @@
       "methods": ["GET"],
       "dest": "/health"
     }
-  ],
-  "env": {
-    "BOT_TOKEN": "@bot_token"
-  }
+  ]
 }
